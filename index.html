@@ -1,206 +1,40 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Status de ARLA</title>
-  <link rel="icon" href="favicon.ico" type="image/x-icon">
-
+  <meta charset="UTF-8">
+  <title>Debug JSONP ARLA</title>
   <style>
-    body {
-      background-color: #f0f0f0;
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      padding: 20px;
-    }
-
-    h1 {
-      text-align: center;
-      font-size: 36px;
-      margin-bottom: 30px;
-      color: #333;
-    }
-
-    .tarjetas {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 15px;
-      margin-bottom: 40px;
-    }
-
-    .tarjeta {
-      width: 220px;
-      height: 120px;
-      border-radius: 12px;
-      padding: 10px 15px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      text-align: center;
-      font-weight: bold;
-    }
-
-    .tarjeta h3 {
-      margin: 0 0 10px 0;
-      font-size: 18px;
-    }
-
-    .verde { background-color: #a8e6cf; color: #1b5e20; }
-    .amarillo { background-color: #fff9c4; color: #f57f17; }
-    .rojo { background-color: #ffcdd2; color: #b71c1c; }
-    .gris { background-color: #cfd8dc; color: #263238; }
-
-    .cuadros {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .cuadro {
-      width: 200px;
-      height: 200px;
-      border-radius: 10px;
-      margin: 10px;
-      padding: 15px;
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-around;
-      align-items: center;
-      background-color: #ffffff;
-      border: 2px solid #ccc;
-      text-align: center;
-    }
-
-    .titulo {
-      font-weight: bold;
-      font-size: 22px;
-      color: #333;
-    }
-
-    .chofer {
-      font-size: 14px;
-      font-weight: bold;
-      color: #444;
-    }
-
-    .chequeo {
-      font-size: 16px;
-      font-weight: bold;
-      color: #666;
-    }
-
-    .barra-container {
-      background-color: #e0e0e0;
-      border-radius: 5px;
-      overflow: hidden;
-      height: 25px;
-      width: 100%;
-    }
-
-    .barra {
-      height: 25px;
-      border-radius: 5px;
-    }
-
-    .raya-1 { width: 25%; background-color: #f8d7da; }
-    .raya-2 { width: 50%; background-color: #ffeeba; }
-    .raya-3 { width: 75%; background-color: #fff3cd; }
-    .raya-4 { width: 100%; background-color: #d4edda; }
-
-    .parpadea {
-      animation: parpadeo 1.5s infinite alternate;
-    }
-
-    @keyframes parpadeo {
-      0% { background-color: #fff; }
-      100% { background-color: #ffcdd2; }
-    }
+    body { font-family: monospace; padding: 20px; background: #f5f5f5; }
+    #log { white-space: pre-wrap; background: #fff; border: 1px solid #ccc; padding: 10px; }
+    #status { font-weight: bold; }
   </style>
 </head>
-
 <body>
 
-  <h1>STATUS DE ARLA</h1>
-  <div class="tarjetas" id="tarjetas"></div>
-  <div class="cuadros" id="cuadros"></div>
+<h1>🔍 Debug JSONP ARLA</h1>
+<div id="status">Cargando script…</div>
+<div id="log"></div>
 
-  <script>
-    // Callback JSONP que procesa los datos de tu Apps Script
-    function handleARLA(data) {
-      let tanqueLleno = 0,
-          mitadTanque = 0,
-          reserva = 0,
-          sinActualizar = 0;
+<script>
+  // Esta función se llamará si JSONP tiene éxito
+  function handleARLA(data) {
+    document.getElementById('status').textContent = '✅ Callback handleARLA ejecutado';
+    document.getElementById('log').textContent = JSON.stringify(data, null, 2);
+    console.log('handleARLA data:', data);
+  }
 
-      const ahora = new Date();
-      const estadoPorMovil = {};
+  // Capturar fallo de carga del <script>
+  function onScriptError(e) {
+    document.getElementById('status').textContent = '❌ Error al cargar JSONP';
+    console.error('JSONP load error', e);
+  }
 
-      // Seleccionar el último registro de cada móvil
-      data.forEach(entry => {
-        const movil = parseInt(entry["MOVIL"], 10);
-        const ts = new Date(entry["Marca temporal"]);
-        if (!estadoPorMovil[movil] || ts > new Date(estadoPorMovil[movil]["Marca temporal"])) {
-          estadoPorMovil[movil] = entry;
-        }
-      });
-
-      // Generar recuadros y contar estados
-      Object.values(estadoPorMovil).forEach(entry => {
-        const movil  = entry["MOVIL"];
-        const rayas  = parseInt(entry["CANTIDAD DE ARLA EN RAYAS SEGUN TABLERO"], 10);
-        const chofer = entry["NOMBRE Y APELLIDO"] || "—";
-        const fecha  = entry["Marca temporal"] || "—";
-
-        if (rayas === 4) tanqueLleno++;
-        else if (rayas === 2 || rayas === 3) mitadTanque++;
-        else if (rayas === 1) reserva++;
-
-        const horas = (ahora - new Date(fecha)) / (1000 * 60 * 60);
-        if (!isNaN(horas) && horas > 24) sinActualizar++;
-
-        const cuadro = document.createElement("div");
-        cuadro.className = "cuadro";
-        if (rayas === 1) cuadro.classList.add("parpadea");
-
-        cuadro.innerHTML = `
-          <div class="titulo">Móvil ${movil}</div>
-          <div class="chofer">Chofer: ${chofer}</div>
-          <div class="chequeo">${fecha}</div>
-          <div class="barra-container">
-            <div class="barra raya-${rayas}"></div>
-          </div>
-        `;
-        document.getElementById("cuadros").appendChild(cuadro);
-      });
-
-      // Generar tarjetas de resumen
-      document.getElementById("tarjetas").innerHTML = `
-        <div class="tarjeta verde">
-          <h3>Tanque lleno</h3>
-          ${tanqueLleno}
-        </div>
-        <div class="tarjeta amarillo">
-          <h3>Mitad de tanque</h3>
-          ${mitadTanque}
-        </div>
-        <div class="tarjeta rojo">
-          <h3>Reserva</h3>
-          ${reserva}
-        </div>
-        <div class="tarjeta gris">
-          <h3>+24hs sin actualizar</h3>
-          ${sinActualizar}
-        </div>
-      `;
-    }
-  </script>
-
-  <!-- JSONP: carga la respuesta de tu Web App de Apps Script -->
-  <script src="https://script.google.com/macros/s/AKfycbzRDaAFR2GYrlD3AkD5Uyj3q7Hy27MY6dtIZqPrlCzAs7Dc35TPMAn3UskB2kznlteoew/exec?callback=handleARLA"></script>
+  // Insertar el script JSONP dinámicamente para atrapar onerror
+  const script = document.createElement('script');
+  script.src = 'https://script.google.com/macros/s/AKfycbzRDaAFR2GYrlD3AkD5Uyj3q7Hy27MY6dtIZqPrlCzAs7Dc35TPMAn3UskB2kznlteoew/exec?callback=handleARLA';
+  script.onerror = onScriptError;
+  document.head.appendChild(script);
+</script>
 
 </body>
 </html>
