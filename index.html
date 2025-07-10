@@ -10,15 +10,12 @@
       font-family: 'Segoe UI', sans-serif;
       margin: 0; padding: 20px;
     }
-
-    /* Encabezado centrado, filtro a la derecha */
     .header {
       display: flex; justify-content: center; align-items: center;
       position: relative; margin-bottom: 20px;
     }
     .header h1 {
       margin: 0; font-size: 36px; color: #333;
-      text-align: center;
     }
     .filtros {
       position: absolute; right: 0;
@@ -32,32 +29,28 @@
                   no-repeat right 12px center;
       background-size: 10px 6px; cursor: pointer;
     }
-
-    /* Resumen de 4 tarjetas */
     .tarjetas {
       display: flex; flex-wrap: wrap; gap: 15px;
       justify-content: center; margin-bottom: 30px;
     }
     .tarjeta {
-      width: 220px; height: 160px;
-      border-radius: 12px; background: #fff;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 220px; height: 160px; border-radius: 12px;
+      background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       display: flex; flex-direction: column;
       justify-content: center; align-items: center;
       text-align: center;
     }
     .tarjeta h3 { margin: 0; font-size: 18px; color: #333; }
     .tarjeta .numero {
-      margin-top: 8px;
-      font-size: 64px; font-weight: bold;
-      line-height: 0.9; color: #333;
+      margin-top: 8px; font-size: 64px;
+      font-weight: bold; line-height: 0.9; color: #333;
     }
     .verde    { background: #a8e6cf; }
     .amarillo { background: #fff9c4; }
     .rojo     { background: #ffcdd2; }
     .gris     { background: #cfd8dc; }
 
-    /* Grid dinámico para 30 flotas */
+    /* GRID para flotas */
     .cuadros {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -76,25 +69,26 @@
 
     .titulo { font-size: 22px; font-weight: bold; color: #333; }
     .chofer { font-size: 14px; font-weight: bold; color: #444; margin: 8px 0; }
-
-    /* Fecha coloreada y agrandada */
-    .chequeo {
-      font-size: 18px; font-weight: bold; margin-bottom: 10px;
-    }
-    .status-new    { color: #1b5e20; }   /* <12h */
-    .status-medium { color: #f57f17; }   /* 12–24h */
-    .status-old    { color: #b71c1c; }   /* >24h */
+    .chequeo { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+    .status-new    { color: #1b5e20; }
+    .status-medium { color: #f57f17; }
+    .status-old    { color: #b71c1c; }
 
     .barra-container {
+      position: relative;
       width: 100%; height: 25px;
       background: #e0e0e0; border-radius: 5px;
       overflow: hidden; margin-top: auto;
     }
-    .barra { height: 25px; border-radius: 5px; }
-    .raya-1 { width: 25%; background: #f8d7da; }
-    .raya-2 { width: 50%; background: #ffeeba; }
-    .raya-3 { width: 75%; background: #fff3cd; }
-    .raya-4 { width:100%; background: #d4edda; }
+    .barra {
+      display: flex; justify-content: center; align-items: center;
+      height: 100%; color: #fff; font-weight: bold;
+      font-size: 12px; border-radius: 5px;
+    }
+    .raya-1 { width: 25%; background: #e53935; }
+    .raya-2 { width: 50%; background: #fb8c00; }
+    .raya-3 { width: 75%; background: #fdd835; color: #333; }
+    .raya-4 { width:100%; background: #43a047; }
 
     .parpadea {
       animation: parpadeo 1.5s infinite alternate;
@@ -145,7 +139,6 @@
       const ultimoPorMovil = {};
       let lleno=0, mitad=0, reserva=0, sinAct=0;
 
-      // Tomar sólo el último registro de cada uno de los 30 móviles
       data.forEach(e => {
         const movil = parseInt(e["MOVIL"], 10);
         const ts    = new Date(e["Marca temporal"]);
@@ -154,20 +147,20 @@
         }
       });
 
-      // Crear cuadro por cada móvil y contar estados
       Object.values(ultimoPorMovil).forEach(e => {
-        const r    = parseInt(e["CANTIDAD DE ARLA EN RAYAS SEGUN TABLERO"], 10);
+        const r    = parseInt(e["CANTIDAD DE ARLA EN RAYAS SEGUN TABLERO"],10);
         const fRaw = e["Marca temporal"];
         const diff = (ahora - new Date(fRaw)) / 36e5;
 
         let statusVal, timeClass;
-        if (diff > 24)      { statusVal = "sinactualizar"; timeClass = "status-old"; sinAct++; }
-        else if (r === 4)   { statusVal = "lleno";          timeClass = "status-new"; lleno++; }
-        else if (r >= 2)    { statusVal = "mitad";          timeClass = "status-new"; mitad++; }
-        else                { statusVal = "reserva";        timeClass = "status-new"; reserva++; }
+        if (diff > 24)      { statusVal="sinactualizar"; timeClass="status-old"; sinAct++; }
+        else if (r === 4)   { statusVal="lleno"; timeClass="status-new"; lleno++; }
+        else if (r >= 2)    { statusVal="mitad"; timeClass="status-new"; mitad++; }
+        else                { statusVal="reserva"; timeClass="status-new"; reserva++; }
 
+        const percent = r * 25;
         const div = document.createElement("div");
-        div.className    = "cuadro" + (r===1 ? " parpadea" : "");
+        div.className = "cuadro" + (r===1?" parpadea":"");
         div.dataset.status = statusVal;
         div.innerHTML = `
           <div class="titulo">Móvil ${e["MOVIL"]}</div>
@@ -176,28 +169,25 @@
             Última actualización:<br>${formatFecha(fRaw)}
           </div>
           <div class="barra-container">
-            <div class="barra raya-${r}"></div>
+            <div class="barra raya-${r}">${percent}%</div>
           </div>`;
         document.getElementById("cuadros").appendChild(div);
       });
 
-      // Mostrar resumen de las 4 categorías
       document.getElementById("tarjetas").innerHTML = `
         <div class="tarjeta verde"><h3>Tanque lleno</h3><div class="numero">${lleno}</div></div>
         <div class="tarjeta amarillo"><h3>Mitad de tanque</h3><div class="numero">${mitad}</div></div>
         <div class="tarjeta rojo"><h3>Reserva</h3><div class="numero">${reserva}</div></div>
         <div class="tarjeta gris"><h3>+24 hs sin actualizar</h3><div class="numero">${sinAct}</div></div>`;
 
-      // Filtro
-      document.getElementById("statusFilter").addEventListener("change", e => {
+      document.getElementById("statusFilter").onchange = e => {
         const sel = e.target.value;
         document.querySelectorAll(".cuadro").forEach(c => {
           c.hidden = sel !== "all" && c.dataset.status !== sel;
         });
-      });
+      };
     }
 
-    // Carga inicial + auto-refresh cada 60s
     loadData();
     setInterval(loadData, 60000);
   </script>
