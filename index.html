@@ -1,86 +1,96 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Status de ARLA</title>
-  <link rel="icon" href="favicon.ico" type="image/x-icon">
   <style>
     body {
       background: #f0f0f0;
       font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      padding: 20px;
+      margin: 0; padding: 20px;
     }
-    h1 {
+
+    /* Encabezado centrado, filtro a la derecha */
+    .header {
+      display: flex; justify-content: center; align-items: center;
+      position: relative; margin-bottom: 20px;
+    }
+    .header h1 {
+      margin: 0; font-size: 36px; color: #333;
       text-align: center;
-      font-size: 36px;
-      color: #333;
-      margin-bottom: 30px;
     }
+    .filtros {
+      position: absolute; right: 0;
+    }
+    .filtros select {
+      font-size: 16px; padding: 8px 12px;
+      border-radius: 8px; border: 1px solid #ccc;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      appearance: none;
+      background: #fff url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath fill='%23666' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E")
+                  no-repeat right 12px center;
+      background-size: 10px 6px; cursor: pointer;
+    }
+
+    /* Resumen de 4 tarjetas */
     .tarjetas {
-      display: flex;
-      gap: 15px;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-bottom: 40px;
+      display: flex; flex-wrap: wrap; gap: 15px;
+      justify-content: center; margin-bottom: 30px;
     }
     .tarjeta {
-      width: 220px;
-      height: 120px;
-      border-radius: 12px;
+      width: 220px; height: 160px;
+      border-radius: 12px; background: #fff;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      font-weight: bold;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
       text-align: center;
     }
-    .tarjeta h3 {
-      margin: 0 0 8px;
-      font-size: 18px;
+    .tarjeta h3 { margin: 0; font-size: 18px; color: #333; }
+    .tarjeta .numero {
+      margin-top: 8px;
+      font-size: 64px; font-weight: bold;
+      line-height: 0.9; color: #333;
     }
-    .verde    { background: #a8e6cf; color: #1b5e20; }
-    .amarillo { background: #fff9c4; color: #f57f17; }
-    .rojo     { background: #ffcdd2; color: #b71c1c; }
-    .gris     { background: #cfd8dc; color: #263238; }
+    .verde    { background: #a8e6cf; }
+    .amarillo { background: #fff9c4; }
+    .rojo     { background: #ffcdd2; }
+    .gris     { background: #cfd8dc; }
 
+    /* Grid dinámico para 30 flotas */
     .cuadros {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 15px;
+      justify-items: center;
     }
     .cuadro {
-      width: 200px;
-      height: 200px;
-      background: #fff;
-      border: 2px solid #ccc;
-      border-radius: 10px;
-      margin: 10px;
-      padding: 15px;
+      width: 100%; max-width: 180px; height: 240px;
+      background: #fff; border: 2px solid #ccc;
+      border-radius: 10px; padding: 15px;
       box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-around;
-      align-items: center;
-      text-align: center;
+      display: flex; flex-direction: column;
+      align-items: center; text-align: center;
     }
+    .cuadro[hidden] { display: none; }
+
     .titulo { font-size: 22px; font-weight: bold; color: #333; }
-    .chofer { font-size: 14px; font-weight: bold; color: #444; }
-    .chequeo { font-size: 16px; font-weight: bold; color: #666; }
+    .chofer { font-size: 14px; font-weight: bold; color: #444; margin: 8px 0; }
+
+    /* Fecha coloreada y agrandada */
+    .chequeo {
+      font-size: 18px; font-weight: bold; margin-bottom: 10px;
+    }
+    .status-new    { color: #1b5e20; }   /* <12h */
+    .status-medium { color: #f57f17; }   /* 12–24h */
+    .status-old    { color: #b71c1c; }   /* >24h */
 
     .barra-container {
-      width: 100%;
-      height: 25px;
-      background: #e0e0e0;
-      border-radius: 5px;
-      overflow: hidden;
+      width: 100%; height: 25px;
+      background: #e0e0e0; border-radius: 5px;
+      overflow: hidden; margin-top: auto;
     }
-    .barra {
-      height: 25px;
-      border-radius: 5px;
-    }
+    .barra { height: 25px; border-radius: 5px; }
     .raya-1 { width: 25%; background: #f8d7da; }
     .raya-2 { width: 50%; background: #ffeeba; }
     .raya-3 { width: 75%; background: #fff3cd; }
@@ -97,69 +107,99 @@
 </head>
 <body>
 
-  <h1>STATUS DE ARLA</h1>
+  <div class="header">
+    <h1>STATUS DE ARLA</h1>
+    <div class="filtros">
+      <select id="statusFilter">
+        <option value="all">Todos</option>
+        <option value="lleno">Tanque lleno</option>
+        <option value="mitad">Mitad de tanque</option>
+        <option value="reserva">Reserva</option>
+        <option value="sinactualizar">+24 hs sin actualizar</option>
+      </select>
+    </div>
+  </div>
+
   <div class="tarjetas" id="tarjetas"></div>
   <div class="cuadros" id="cuadros"></div>
 
   <script>
-    function handleARLA(data) {
-      const ahora = new Date();
-      let tanqueLleno = 0, mitadTanque = 0, reserva = 0, sinActualizar = 0;
-      const estadoPorMovil = {};
+    const API_URL = "https://script.google.com/macros/s/AKfycbwqPWO-KRu55rozf7E7Ood-x_V5J9gfGvO4B1KjA7Vswaxo-87kewN4F04GLpCU7MZGAg/exec";
 
-      data.forEach(entry => {
-        const m = parseInt(entry["MOVIL"], 10);
-        const ts = new Date(entry["Marca temporal"]);
-        if (!estadoPorMovil[m] || ts > new Date(estadoPorMovil[m]["Marca temporal"])) {
-          estadoPorMovil[m] = entry;
+    function formatFecha(ts) {
+      const d = new Date(ts), pad = n => String(n).padStart(2,'0');
+      return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} `
+           + `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+
+    function loadData() {
+      document.getElementById("cuadros").innerHTML = "";
+      fetch(API_URL)
+        .then(r => r.ok ? r.json() : Promise.reject(r.status))
+        .then(data => renderDashboard(data))
+        .catch(err => console.error("Error al fetch:", err));
+    }
+
+    function renderDashboard(data) {
+      const ahora = new Date();
+      const ultimoPorMovil = {};
+      let lleno=0, mitad=0, reserva=0, sinAct=0;
+
+      // Tomar sólo el último registro de cada uno de los 30 móviles
+      data.forEach(e => {
+        const movil = parseInt(e["MOVIL"], 10);
+        const ts    = new Date(e["Marca temporal"]);
+        if (!ultimoPorMovil[movil] || ts > new Date(ultimoPorMovil[movil]["Marca temporal"])) {
+          ultimoPorMovil[movil] = e;
         }
       });
 
-      Object.values(estadoPorMovil).forEach(entry => {
-        const movil  = entry["MOVIL"];
-        const rayas  = parseInt(entry["CANTIDAD DE ARLA EN RAYAS SEGUN TABLERO"], 10);
-        const chofer = entry["NOMBRE Y APELLIDO"] || "—";
-        const fecha  = entry["Marca temporal"] || "—";
+      // Crear cuadro por cada móvil y contar estados
+      Object.values(ultimoPorMovil).forEach(e => {
+        const r    = parseInt(e["CANTIDAD DE ARLA EN RAYAS SEGUN TABLERO"], 10);
+        const fRaw = e["Marca temporal"];
+        const diff = (ahora - new Date(fRaw)) / 36e5;
 
-        if (rayas === 4)       tanqueLleno++;
-        else if (rayas >= 2)   mitadTanque++;
-        else                   reserva++;
-
-        const horas = (ahora - new Date(fecha)) / (1000*60*60);
-        if (horas > 24) sinActualizar++;
+        let statusVal, timeClass;
+        if (diff > 24)      { statusVal = "sinactualizar"; timeClass = "status-old"; sinAct++; }
+        else if (r === 4)   { statusVal = "lleno";          timeClass = "status-new"; lleno++; }
+        else if (r >= 2)    { statusVal = "mitad";          timeClass = "status-new"; mitad++; }
+        else                { statusVal = "reserva";        timeClass = "status-new"; reserva++; }
 
         const div = document.createElement("div");
-        div.className = "cuadro" + (rayas===1 ? " parpadea" : "");
+        div.className    = "cuadro" + (r===1 ? " parpadea" : "");
+        div.dataset.status = statusVal;
         div.innerHTML = `
-          <div class="titulo">Móvil ${movil}</div>
-          <div class="chofer">Chofer: ${chofer}</div>
-          <div class="chequeo">${fecha}</div>
+          <div class="titulo">Móvil ${e["MOVIL"]}</div>
+          <div class="chofer">Chofer: ${e["NOMBRE Y APELLIDO"]}</div>
+          <div class="chequeo ${timeClass}">
+            Última actualización:<br>${formatFecha(fRaw)}
+          </div>
           <div class="barra-container">
-            <div class="barra raya-${rayas}"></div>
+            <div class="barra raya-${r}"></div>
           </div>`;
         document.getElementById("cuadros").appendChild(div);
       });
 
+      // Mostrar resumen de las 4 categorías
       document.getElementById("tarjetas").innerHTML = `
-        <div class="tarjeta verde">
-          <h3>Tanque lleno</h3>${tanqueLleno}
-        </div>
-        <div class="tarjeta amarillo">
-          <h3>Mitad de tanque</h3>${mitadTanque}
-        </div>
-        <div class="tarjeta rojo">
-          <h3>Reserva</h3>${reserva}
-        </div>
-        <div class="tarjeta gris">
-          <h3>+24hs sin actualizar</h3>${sinActualizar}
-        </div>`;
+        <div class="tarjeta verde"><h3>Tanque lleno</h3><div class="numero">${lleno}</div></div>
+        <div class="tarjeta amarillo"><h3>Mitad de tanque</h3><div class="numero">${mitad}</div></div>
+        <div class="tarjeta rojo"><h3>Reserva</h3><div class="numero">${reserva}</div></div>
+        <div class="tarjeta gris"><h3>+24 hs sin actualizar</h3><div class="numero">${sinAct}</div></div>`;
+
+      // Filtro
+      document.getElementById("statusFilter").addEventListener("change", e => {
+        const sel = e.target.value;
+        document.querySelectorAll(".cuadro").forEach(c => {
+          c.hidden = sel !== "all" && c.dataset.status !== sel;
+        });
+      });
     }
-  </script>
 
-  <!-- JSONP desde tu Apps Script (reemplaza por la URL de tu despliegue) -->
-  <script
-    src="https://script.google.com/macros/s/AKfycbw0gxM9wPyrl8gZBLaOvye4ctsWX8l8cMSXhzZ5yUy2ymIHVSXhVFCc9eKA7SfulTWPGA/exec?callback=handleARLA">
+    // Carga inicial + auto-refresh cada 60s
+    loadData();
+    setInterval(loadData, 60000);
   </script>
-
 </body>
 </html>
