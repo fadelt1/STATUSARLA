@@ -1,40 +1,165 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Debug JSONP ARLA</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Status de ARLA</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
   <style>
-    body { font-family: monospace; padding: 20px; background: #f5f5f5; }
-    #log { white-space: pre-wrap; background: #fff; border: 1px solid #ccc; padding: 10px; }
-    #status { font-weight: bold; }
+    body {
+      background: #f0f0f0;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 36px;
+      color: #333;
+      margin-bottom: 30px;
+    }
+    .tarjetas {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 40px;
+    }
+    .tarjeta {
+      width: 220px;
+      height: 120px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      text-align: center;
+    }
+    .tarjeta h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+    .verde    { background: #a8e6cf; color: #1b5e20; }
+    .amarillo { background: #fff9c4; color: #f57f17; }
+    .rojo     { background: #ffcdd2; color: #b71c1c; }
+    .gris     { background: #cfd8dc; color: #263238; }
+
+    .cuadros {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .cuadro {
+      width: 200px;
+      height: 200px;
+      background: #fff;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      margin: 10px;
+      padding: 15px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      align-items: center;
+      text-align: center;
+    }
+    .titulo { font-size: 22px; font-weight: bold; color: #333; }
+    .chofer { font-size: 14px; font-weight: bold; color: #444; }
+    .chequeo { font-size: 16px; font-weight: bold; color: #666; }
+
+    .barra-container {
+      width: 100%;
+      height: 25px;
+      background: #e0e0e0;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .barra {
+      height: 25px;
+      border-radius: 5px;
+    }
+    .raya-1 { width: 25%; background: #f8d7da; }
+    .raya-2 { width: 50%; background: #ffeeba; }
+    .raya-3 { width: 75%; background: #fff3cd; }
+    .raya-4 { width:100%; background: #d4edda; }
+
+    .parpadea {
+      animation: parpadeo 1.5s infinite alternate;
+    }
+    @keyframes parpadeo {
+      from { background: #fff; }
+      to   { background: #ffcdd2; }
+    }
   </style>
 </head>
 <body>
 
-<h1>🔍 Debug JSONP ARLA</h1>
-<div id="status">Cargando script…</div>
-<div id="log"></div>
+  <h1>STATUS DE ARLA</h1>
+  <div class="tarjetas" id="tarjetas"></div>
+  <div class="cuadros" id="cuadros"></div>
 
-<script>
-  // Esta función se llamará si JSONP tiene éxito
-  function handleARLA(data) {
-    document.getElementById('status').textContent = '✅ Callback handleARLA ejecutado';
-    document.getElementById('log').textContent = JSON.stringify(data, null, 2);
-    console.log('handleARLA data:', data);
-  }
+  <script>
+    function handleARLA(data) {
+      const ahora = new Date();
+      let tanqueLleno = 0, mitadTanque = 0, reserva = 0, sinActualizar = 0;
+      const estadoPorMovil = {};
 
-  // Capturar fallo de carga del <script>
-  function onScriptError(e) {
-    document.getElementById('status').textContent = '❌ Error al cargar JSONP';
-    console.error('JSONP load error', e);
-  }
+      data.forEach(entry => {
+        const m = parseInt(entry["MOVIL"], 10);
+        const ts = new Date(entry["Marca temporal"]);
+        if (!estadoPorMovil[m] || ts > new Date(estadoPorMovil[m]["Marca temporal"])) {
+          estadoPorMovil[m] = entry;
+        }
+      });
 
-  // Insertar el script JSONP dinámicamente para atrapar onerror
-  const script = document.createElement('script');
-  script.src = 'https://script.google.com/macros/s/AKfycbzRDaAFR2GYrlD3AkD5Uyj3q7Hy27MY6dtIZqPrlCzAs7Dc35TPMAn3UskB2kznlteoew/exec?callback=handleARLA';
-  script.onerror = onScriptError;
-  document.head.appendChild(script);
-</script>
+      Object.values(estadoPorMovil).forEach(entry => {
+        const movil  = entry["MOVIL"];
+        const rayas  = parseInt(entry["CANTIDAD DE ARLA EN RAYAS SEGUN TABLERO"], 10);
+        const chofer = entry["NOMBRE Y APELLIDO"] || "—";
+        const fecha  = entry["Marca temporal"] || "—";
+
+        if (rayas === 4)       tanqueLleno++;
+        else if (rayas >= 2)   mitadTanque++;
+        else                   reserva++;
+
+        const horas = (ahora - new Date(fecha)) / (1000*60*60);
+        if (horas > 24) sinActualizar++;
+
+        const div = document.createElement("div");
+        div.className = "cuadro" + (rayas===1 ? " parpadea" : "");
+        div.innerHTML = `
+          <div class="titulo">Móvil ${movil}</div>
+          <div class="chofer">Chofer: ${chofer}</div>
+          <div class="chequeo">${fecha}</div>
+          <div class="barra-container">
+            <div class="barra raya-${rayas}"></div>
+          </div>`;
+        document.getElementById("cuadros").appendChild(div);
+      });
+
+      document.getElementById("tarjetas").innerHTML = `
+        <div class="tarjeta verde">
+          <h3>Tanque lleno</h3>${tanqueLleno}
+        </div>
+        <div class="tarjeta amarillo">
+          <h3>Mitad de tanque</h3>${mitadTanque}
+        </div>
+        <div class="tarjeta rojo">
+          <h3>Reserva</h3>${reserva}
+        </div>
+        <div class="tarjeta gris">
+          <h3>+24hs sin actualizar</h3>${sinActualizar}
+        </div>`;
+    }
+  </script>
+
+  <!-- JSONP desde tu Apps Script (reemplaza por la URL de tu despliegue) -->
+  <script
+    src="https://script.google.com/macros/s/AKfycbw0gxM9wPyrl8gZBLaOvye4ctsWX8l8cMSXhzZ5yUy2ymIHVSXhVFCc9eKA7SfulTWPGA/exec?callback=handleARLA">
+  </script>
 
 </body>
 </html>
